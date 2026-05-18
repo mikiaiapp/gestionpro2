@@ -219,3 +219,14 @@ CREATE INDEX idx_ventas_user ON public.ventas(user_id);
 CREATE INDEX idx_proyectos_user ON public.proyectos(user_id);
 CREATE INDEX idx_pagos_coste ON public.pagos(coste_id);
 CREATE INDEX idx_cobros_venta ON public.cobros(venta_id);
+
+-- 10. SEGURIDAD Y PERMISOS DE ACCESO API (Futuro-Compatibilidad Supabase)
+-- Otorga permisos explícitos sobre las tablas existentes
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+
+-- Configura los permisos por defecto para cualquier tabla que se cree en el futuro
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO anon;
