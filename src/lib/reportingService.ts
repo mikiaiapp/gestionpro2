@@ -1,27 +1,12 @@
-
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { formatCurrency } from './format';
 
-interface VATBookEntry {
-  fecha: string;
-  num_factura: string;
-  nif: string;
-  nombre: string;
-  base_imponible: number;
-  iva_pct: number;
-  iva_importe: number;
-  retencion_pct?: number;
-  retencion_importe?: number;
-  total: number;
-}
-
 const applyCorporateStyle = (doc: jsPDF) => {
   const width = doc.internal.pageSize.getWidth();
   const height = doc.internal.pageSize.getHeight();
-  
   const drawBackground = () => {
     // Fondo crema corporativo (#ede8e0)
     doc.setFillColor(237, 232, 224); 
@@ -220,31 +205,72 @@ export const exportVATBookPDF = (type: 'ventas' | 'costes', data: any[], perfil:
 };
 
 export const exportVATBookExcel = (type: 'ventas' | 'costes', data: any[]) => {
-  const preparedData = data.map((v, idx) => ({
-    'Registro/Nº': type === 'costes' ? (v.num_interno || v.registro_interno || v.numero || '-') : (idx + 1),
-    'Fecha': new Date(v.fecha).toLocaleDateString(),
-    'Número Factura': type === 'ventas' ? `${v.serie}-${v.num_factura}` : (v.num_factura_proveedor || v.num_factura || '-'),
-    'NIF': type === 'ventas' 
-      ? (v.clientes?.nif || v.nif_cliente || '-') 
-      : (v.proveedores?.nif || v.nif_proveedor || v.proveedor_nif || v.nif_provider || '-'),
-    'Nombre / Razón Social': type === 'ventas' 
-      ? (v.clientes?.nombre || v.nombre_cliente || '-') 
-      : (v.proveedores?.nombre || v.nombre_proveedor || v.proveedor_nombre || '-'),
-    'Base Imponible': v.base_imponible || 0,
-    '% IVA': v.iva_pct || 0,
-    'Cuota IVA': v.iva_importe || 0,
-    '% Retención': v.retencion_pct || 0,
-    'Cuota Retención': v.retencion_importe || 0,
-    'TOTAL': v.total || 0
-  }));
+  const isVentas = type === 'ventas';
+  const vts = data || [];
+  
+  const grouped = vts.reduce((acc: any[], v: any) => {
+    const invoiceLines = (isVentas ? v.venta_lineas : v.coste_lineas) || [];
+    const ivaGroups: { [key: number]: { base: number, cuota: number } } = {};
+    
+    if (invoiceLines.length > 0) {
+      invoiceLines.forEach((l: any) => {
+        const rate = Number(l.iva_pct) || 0;
+        if (!ivaGroups[rate]) ivaGroups[rate] = { base: 0, cuota: 0 };
+        const subtotal = (Number(l.unidades) || 1) * (Number(l.precio_unitario) || 0);
+        ivaGroups[rate].base += subtotal;
+        ivaGroups[rate].cuota += (subtotal * rate) / 100;
+      });
+    } else {
+      const rate = Number(v.iva_pct) || 0;
+      ivaGroups[rate] = { 
+        base: Number(v.base_imponible) || Number(v.total) / (1 + rate/100) || 0, 
+        cuota: Number(v.iva_importe) || 0 
+      };
+    }
 
-  const worksheet = XLSX.utils.json_to_sheet(preparedData);
+    Object.keys(ivaGroups).forEach((rateStr) => {
+      const rate = Number(rateStr);
+      const group = ivaGroups[rate];
+      
+      const totalInvoiceBase = Object.values(ivaGroups).reduce((acc, g) => acc + g.base, 0);
+      const ratio = totalInvoiceBase > 0 ? group.base / totalInvoiceBase : 0;
+      const partialRetencion = (Number(v.retencion_importe) || 0) * ratio;
+
+      acc.push({
+        'Nº Registro': v.num_interno || v.registro_interno || v.numero || '-',
+        'Fecha': new Date(v.fecha).toLocaleDateString(),
+        'Factura': isVentas ? `${v.serie}-${v.num_factura}` : (v.num_factura_proveedor || v.num_factura || '-'),
+        'NIF': isVentas 
+          ? (v.clientes?.nif || v.nif_cliente || '-') 
+          : (v.proveedores?.nif || v.nif_proveedor || v.proveedor_nif || v.nif_provider || '-'),
+        'Nombre / Razón Social': isVentas 
+          ? (v.clientes?.nombre || v.nombre_cliente || '-') 
+          : (v.proveedores?.nombre || v.nombre_proveedor || v.proveedor_nombre || '-'),
+        'Base Imponible': group.base,
+        '% IVA': rate,
+        'Cuota IVA': group.cuota,
+        '% Retención/RE': v.retencion_pct || 0,
+        'Cuota Retención/RE': partialRetencion,
+        'TOTAL': group.base + group.cuota - partialRetencion
+      });
+    });
+    
+    return acc;
+  }, []);
+
+  grouped.sort((a, b) => {
+    const regComp = a['Nº Registro'].toString().localeCompare(b['Nº Registro'].toString(), undefined, { numeric: true });
+    if (regComp !== 0) return regComp;
+    return new Date(a['Fecha']).getTime() - new Date(b['Fecha']).getTime();
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(grouped);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Libro IVA');
   
   const wscols = [
-    { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 35 },
-    { wch: 15 }, { wch: 8 },  { wch: 15 }, { wch: 8 },  { wch: 15 }, { wch: 15 }
+    { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 35 },
+    { wch: 15 }, { wch: 8 },  { wch: 15 }, { wch: 15 },  { wch: 15 }, { wch: 15 }
   ];
   worksheet['!cols'] = wscols;
 
@@ -408,7 +434,7 @@ export const generateProjectSummaryPDF = async (projects: any[], perfil: any) =>
       columnStyles: { 3: { fontStyle: 'bold' } }
     });
 
-    doc.save(`resumen_global_proyectos.pdf`);
+    doc.save(`Resumen_Proyectos_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 export const exportEntitiesPDF = (type: 'clientes' | 'proveedores', data: any[], perfil: any) => {

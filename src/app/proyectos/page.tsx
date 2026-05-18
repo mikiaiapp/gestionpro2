@@ -10,7 +10,7 @@ import { Sidebar } from "@/components/Sidebar";
 import RichTextEditor from "@/components/RichTextEditor";
 import { DataTableHeader } from "@/components/DataTableHeader";
 import { generatePDF } from "@/lib/pdfGenerator";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, cleanBudgetNumber } from "@/lib/format";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { uploadInvoiceFile, deleteInvoiceFile } from "@/lib/storageService";
 import { Pagination } from "@/components/Pagination";
@@ -282,7 +282,7 @@ export default function ProyectosPage() {
         
         const pdfDoc = await generatePDF({
           tipo: 'PRESUPUESTO',
-          numero: (`${pFull.serie || 'P'}-${refFinal}`).replace('P-P-', 'P-'),
+          numero: cleanBudgetNumber(pFull.serie, refFinal),
           fecha: pFull.fecha,
           cliente: {
             nombre: pFull.clientes?.nombre || 'Particular',
@@ -310,7 +310,7 @@ export default function ProyectosPage() {
 
         const blob = pdfDoc.output('blob');
         const publicUrl = await uploadInvoiceFile(blob, 'presupuestos', { 
-          number: `${pFull.serie || 'P'}-${refFinal}`.replace('P-P-', 'P-'), 
+          number: cleanBudgetNumber(pFull.serie, refFinal), 
           entity: pFull.clientes?.nombre || 'Cliente' 
         });
 
@@ -358,11 +358,10 @@ export default function ProyectosPage() {
 
       // Búsqueda robusta para el PDF
       const refRaw = p.num_proyecto || p.numero || p.num_referencia || p.referencia || "S/N";
-      const refFinal = (`${p.serie || 'P'}-${refRaw}`).replace('P-P-', 'P-');
       
       await generatePDF({
         tipo: 'PRESUPUESTO',
-        numero: `${refFinal} - ${p.nombre}`,
+        numero: `${cleanBudgetNumber(p.serie, refRaw)} - ${p.nombre}`,
         fecha: p.fecha,
         cliente: {
           nombre: p.clientes?.nombre || 'Cliente Final',
@@ -415,10 +414,9 @@ export default function ProyectosPage() {
 
     setLoading(true);
     try {
-      const refFinal = (`${p.serie || 'P'}-${p[columnKey]}`).replace('P-P-', 'P-');
       const pdfData: any = {
         tipo: 'PRESUPUESTO',
-        numero: refFinal,
+        numero: cleanBudgetNumber(p.serie, p[columnKey]),
         fecha: p.fecha,
         cliente: {
           nombre: p.clientes?.nombre || 'Cliente',
@@ -542,7 +540,7 @@ export default function ProyectosPage() {
       if (!columnFilters[key]) return true;
       let val = '';
       if (key === 'cliente') val = p.clientes?.nombre || '';
-      else if (key === 'ref') val = `${p.serie || 'P'}-${p[columnKey]}`.replace('P-P-', 'P-') || '';
+      else if (key === 'ref') val = cleanBudgetNumber(p.serie, p[columnKey]);
       else if (key === 'total' || key === 'facturado' || key === 'cobrado') val = (p[key] || 0).toString();
       else val = p[key] || '';
       return val.toString().toLowerCase().includes(columnFilters[key].toLowerCase());
@@ -557,8 +555,8 @@ export default function ProyectosPage() {
       aVal = a.clientes?.nombre || '';
       bVal = b.clientes?.nombre || '';
     } else if (sortConfig.key === 'ref') {
-      aVal = `${a.serie || 'P'}-${a[columnKey]}`.replace('P-P-', 'P-') || '';
-      bVal = `${b.serie || 'P'}-${b[columnKey]}`.replace('P-P-', 'P-') || '';
+      aVal = cleanBudgetNumber(a.serie, a[columnKey]);
+      bVal = cleanBudgetNumber(b.serie, b[columnKey]);
     } else if (sortConfig.key === 'total' || sortConfig.key === 'facturado' || sortConfig.key === 'cobrado') {
       aVal = Number(a[sortConfig.key] || 0);
       bVal = Number(b[sortConfig.key] || 0);
@@ -611,77 +609,74 @@ export default function ProyectosPage() {
       </header>
 
       <div className="glass-card bg-white shadow-sm border-[var(--border)] overflow-visible min-h-[400px] mb-20">
-         <table className="w-full border-collapse">
-           <thead>
-             <tr className="bg-gray-50/50 border-b border-[var(--border)]">
-               <DataTableHeader label="Referencia" field="ref" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.ref || ''} onFilter={handleFilter} />
-               <DataTableHeader label="Nombre del Proyecto" field="nombre" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.nombre || ''} onFilter={handleFilter} />
-               <DataTableHeader label="Cliente" field="cliente" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.cliente || ''} onFilter={handleFilter} />
-               <DataTableHeader label="Total" field="total" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.total || ''} onFilter={handleFilter} />
-               <DataTableHeader label="Facturado" field="facturado" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.facturado || ''} onFilter={handleFilter} />
-               <DataTableHeader label="Cobrado" field="cobrado" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.cobrado || ''} onFilter={handleFilter} />
-                <DataTableHeader 
-                  label="Estado" 
-                  field="estado" 
-                  sortConfig={sortConfig} 
-                  onSort={handleSort} 
-                  filterValue={columnFilters.estado || ''} 
-                  onFilter={handleFilter} 
-                  filterOptions={[
-                    { label: 'Abierto', value: 'Abierto' },
-                    { label: 'Cerrado', value: 'Cerrado' }
-                  ]}
-                />
-               <th className="px-6 py-4 text-[12px] font-black text-gray-500 uppercase tracking-wider text-right">Acciones</th>
-             </tr>
-           </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {paginatedProyectos.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                 <td className="px-6 py-4">
-                    <div className="text-[10px] font-bold text-orange-600 uppercase font-mono">{(`${p.serie || 'P'}-${p[columnKey]}`).replace('P-P-', 'P-')}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-gray-800">{p.nombre}</div>
-                  </td>
-                 <td className="px-6 py-4 text-sm font-medium text-gray-600">{p.clientes?.nombre}</td>
-                 <td className="px-6 py-4 text-right font-mono font-bold text-gray-700">{formatCurrency(p.total || 0)}</td>
-                 <td className="px-6 py-4 text-right font-mono font-bold text-blue-600">{formatCurrency(p.facturado || 0)}</td>
-                 <td className="px-6 py-4 text-right font-mono font-bold text-green-600">{formatCurrency(p.cobrado || 0)}</td>
-                  <td className="px-6 py-4">
-                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${p.estado === 'Cerrado' ? 'bg-gray-100 text-gray-400' : 'bg-green-100 text-green-600'}`}>
-                       {p.estado || 'Abierto'}
-                     </span>
-                  </td>
-                 <td className="px-6 py-4 text-right relative">
-                   <button 
-                      onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === p.id ? null : p.id); }}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <MoreHorizontal size={20} />
-                    </button>
-                    {openMenuId === p.id && (
-                      <div className="absolute right-6 top-12 w-48 bg-white rounded-xl shadow-xl border border-[var(--border)] z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 text-left">
-                        <button onClick={() => downloadBudget(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"><Printer size={16}/> Imprimir PDF</button>
-                        
-                        <button onClick={() => handleSendBudgetByEmail(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors">
-                          <Mail size={16}/> Enviar por Email
-                        </button>
-                        <button onClick={() => openEditProyecto(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"><Pencil size={16}/> Editar Presupuesto</button>
-                        <button 
-                           onClick={() => router.push(`/ventas?proyectoId=${p.id}&mode=avance`)} 
-                           className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-colors"
-                         >
-                           <Receipt size={16}/> Facturar
-                         </button>
-                         <div className="h-px bg-gray-100 my-1 mx-2"></div>
+               <table className="w-full border-collapse">
+                 <thead>
+                   <tr className="bg-gray-50/50 border-b border-[var(--border)]">
+                     <DataTableHeader label="Ref / Nombre" field="nombre" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.nombre || ''} onFilter={handleFilter} />
+                     <DataTableHeader label="Cliente" field="cliente" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.cliente || ''} onFilter={handleFilter} />
+                     <DataTableHeader label="Total" field="total" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.total || ''} onFilter={handleFilter} />
+                     <DataTableHeader label="Facturado" field="facturado" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.facturado || ''} onFilter={handleFilter} />
+                     <DataTableHeader label="Cobrado" field="cobrado" sortConfig={sortConfig} onSort={handleSort} filterValue={columnFilters.cobrado || ''} onFilter={handleFilter} />
+                      <DataTableHeader 
+                        label="Estado" 
+                        field="estado" 
+                        sortConfig={sortConfig} 
+                        onSort={handleSort} 
+                        filterValue={columnFilters.estado || ''} 
+                        onFilter={handleFilter} 
+                        filterOptions={[
+                          { label: 'Abierto', value: 'Abierto' },
+                          { label: 'Cerrado', value: 'Cerrado' }
+                        ]}
+                      />
+                     <th className="px-6 py-4 text-[12px] font-black text-gray-500 uppercase tracking-wider text-right">Acciones</th>
+                   </tr>
+                 </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {paginatedProyectos.map(p => (
+                      <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="text-[10px] font-bold text-orange-600 uppercase mb-0.5">{cleanBudgetNumber(p.serie, p[columnKey])}</div>
+                          <div className="font-bold">{p.nombre}</div>
+                       </td>
+                       <td className="px-6 py-4 text-sm font-medium text-gray-600">{p.clientes?.nombre}</td>
+                       <td className="px-6 py-4 text-right font-mono font-bold text-gray-700">{formatCurrency(p.total || 0)}</td>
+                       <td className="px-6 py-4 text-right font-mono font-bold text-blue-600">{formatCurrency(p.facturado || 0)}</td>
+                       <td className="px-6 py-4 text-right font-mono font-bold text-green-600">{formatCurrency(p.cobrado || 0)}</td>
+                        <td className="px-6 py-4">
+                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${p.estado === 'Cerrado' ? 'bg-gray-100 text-gray-400' : 'bg-green-100 text-green-600'}`}>
+                             {p.estado || 'Abierto'}
+                           </span>
+                        </td>
+                       <td className="px-6 py-4 text-right relative">
                          <button 
-                           onClick={() => handleDeleteProyecto(p)} 
-                           className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                         >
-                           <Trash2 size={16}/> Eliminar
-                         </button>
-                      </div>
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === p.id ? null : p.id); }}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <MoreHorizontal size={20} />
+                          </button>
+                          {openMenuId === p.id && (
+                            <div className="absolute right-6 top-12 w-48 bg-white rounded-xl shadow-xl border border-[var(--border)] z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                              <button onClick={() => downloadBudget(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"><Printer size={16}/> Imprimir PDF</button>
+                              
+                              <button onClick={() => handleSendBudgetByEmail(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors">
+                                <Mail size={16}/> Enviar por Email
+                              </button>
+                              <button onClick={() => openEditProyecto(p)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"><Pencil size={16}/> Editar Presupuesto</button>
+                              <button 
+                                 onClick={() => router.push(`/ventas?proyectoId=${p.id}&mode=avance`)} 
+                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-600 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                               >
+                                 <Receipt size={16}/> Facturar
+                               </button>
+                               <div className="h-px bg-gray-100 my-1 mx-2"></div>
+                               <button 
+                                 onClick={() => handleDeleteProyecto(p)} 
+                                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                               >
+                                 <Trash2 size={16}/> Eliminar
+                               </button>
+                            </div>
                     )}
                  </td>
                </tr>

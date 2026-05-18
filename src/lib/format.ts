@@ -9,3 +9,18 @@ export const cleanNIF = (nif: string): string => {
   if (!nif) return "";
   return nif.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 };
+
+export const cleanBudgetNumber = (serie: string | undefined | null, number: string | undefined | null): string => {
+  const s = (serie || '').trim();
+  const n = (number || '').trim();
+  
+  let combined = '';
+  if (s) {
+    combined = `${s}-${n}`;
+  } else {
+    combined = n;
+  }
+  
+  return combined.replace(/^(P-)+/gi, 'P-');
+};
+

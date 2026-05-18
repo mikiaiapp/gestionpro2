@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { generatePDF } from "@/lib/pdfGenerator";
+import { cleanBudgetNumber } from "@/lib/format";
 
 type ProjectDocuments = {
   presupuesto?: any;
@@ -300,7 +301,7 @@ const fetchProjectDocs = async () => {
       
       await generatePDF({
         tipo: 'PRESUPUESTO',
-        numero: `${p.serie || 'P'}-${refFinal}`.replace('P-P-', 'P-'),
+        numero: cleanBudgetNumber(p.serie, refFinal),
         fecha: p.fecha,
         cliente: {
           nombre: p.clientes?.nombre || 'Cliente Final',
@@ -593,7 +594,7 @@ const fetchProjectDocs = async () => {
                                   {projectDocs.presupuesto.nombre}
                                </div>
                                <div className="text-xs font-medium text-gray-400">
-                                  Ref: {projectDocs.presupuesto.serie}-{projectDocs.presupuesto.num_proyecto || projectDocs.presupuesto.numero}
+                                  Ref: {cleanBudgetNumber(projectDocs.presupuesto.serie, projectDocs.presupuesto.num_proyecto || projectDocs.presupuesto.numero)}
                                </div>
                             </div>
                             <div className="flex gap-2">
