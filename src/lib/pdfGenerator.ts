@@ -198,6 +198,12 @@ export const generatePDF = async (data: PDFData) => {
   const cleanForHeight = (html: string) => {
     return (html || "")
       .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<ul[^>]*>/gi, "")
+      .replace(/<\/ul>/gi, "")
+      .replace(/<ol[^>]*>/gi, "")
+      .replace(/<\/ol>/gi, "")
+      .replace(/<li[^>]*>/gi, "• ")
+      .replace(/<\/li>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
       .replace(/<p>/gi, '')
       .replace(/<[^>]*>?/gm, '')
@@ -522,7 +528,16 @@ const renderRichText = (
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&amp;/g, "&")
-    .replace(/<br\s*\/?>/gi, "\n");
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<ul[^>]*>/gi, "")
+    .replace(/<\/ul>/gi, "")
+    .replace(/<ol[^>]*>/gi, "")
+    .replace(/<\/ol>/gi, "")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<\/li>/gi, "\n");
+
+  // Eliminar cualquier otra etiqueta HTML no soportada para que no aparezca como texto plano en el PDF
+  cleanHtml = cleanHtml.replace(/<(?!\/?(b|strong|i|em|u)\b)[^>]*>/gi, "");
   
   // 2. Separar en párrafos por etiquetas <p> o saltos de línea
   const paragraphs = cleanHtml.split(/<p>|<\/p>|\r?\n/i).filter(p => p.trim().length > 0);
