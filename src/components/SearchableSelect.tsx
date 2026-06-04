@@ -16,9 +16,10 @@ interface SearchableSelectProps {
   placeholder: string;
   label?: string;
   error?: boolean;
+  disabled?: boolean;
 }
 
-export function SearchableSelect({ options, value, onChange, placeholder, label, error }: SearchableSelectProps) {
+export function SearchableSelect({ options, value, onChange, placeholder, label, error, disabled }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,17 +41,19 @@ export function SearchableSelect({ options, value, onChange, placeholder, label,
   );
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative ${disabled ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`} ref={containerRef}>
       {label && <label className="block text-[11px] font-bold text-[var(--muted)] uppercase mb-1">{label}</label>}
       
       <div 
         onClick={() => {
+          if (disabled) return;
           setIsOpen(!isOpen);
           if (!isOpen) setSearchTerm("");
         }}
         className={`w-full p-2.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all bg-[var(--background)] text-sm
           ${isOpen ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/10' : error ? 'border-red-300' : 'border-[var(--border)]'}
           ${!selectedOption ? 'text-gray-400' : 'text-[var(--foreground)] font-bold'}
+          ${disabled ? 'bg-gray-50' : ''}
         `}
       >
         <span className="truncate">

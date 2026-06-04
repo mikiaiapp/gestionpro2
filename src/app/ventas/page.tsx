@@ -59,6 +59,7 @@ function VentasContent() {
 
   // Estados temporales del Wizard
   const [selectedProjId, setSelectedProjId] = useState("");
+  const [wizardClientId, setWizardClientId] = useState("");
   const [pct, setPct] = useState("10");
   const [selectedVenta, setSelectedVenta] = useState<any>(null);
   const [isCobroModalOpen, setIsCobroModalOpen] = useState(false);
@@ -68,16 +69,49 @@ function VentasContent() {
 
   const [hasAutoInvoiced, setHasAutoInvoiced] = useState(false);
 
+  const wizardClientes = useMemo(() => {
+    return clientes.filter(c => 
+      proyectos.some(p => p.cliente_id === c.id)
+    );
+  }, [clientes, proyectos]);
+
+  const wizardProyectos = useMemo(() => {
+    return proyectos
+      .filter(p => p.cliente_id === wizardClientId)
+      .map(p => ({
+        ...p,
+        nombre: p.originalNombre || p.nombre
+      }));
+  }, [proyectos, wizardClientId]);
+
   useEffect(() => {
     const pId = searchParams.get("proyectoId");
     const mode = searchParams.get("mode");
-    if (pId && mode === "avance" && !hasAutoInvoiced) {
+    if (pId && mode === "avance" && !hasAutoInvoiced && proyectos.length > 0) {
+      const proj = proyectos.find(p => p.id === pId);
+      if (proj) {
+        setWizardClientId(proj.cliente_id);
+      }
       setSelectedProjId(pId);
       setInvoicingMode('avance');
       setIsWizardOpen(true);
       setHasAutoInvoiced(true);
     }
-  }, [searchParams, hasAutoInvoiced]);
+  }, [searchParams, hasAutoInvoiced, proyectos]);
+
+  useEffect(() => {
+    if (!isWizardOpen) {
+      setWizardClientId("");
+      setSelectedProjId("");
+    }
+  }, [isWizardOpen]);
+
+  useEffect(() => {
+    if (invoicingMode !== 'avance') {
+      setWizardClientId("");
+      setSelectedProjId("");
+    }
+  }, [invoicingMode]);
 
   const handleProjectToInvoice = async (projId: string, pctRequested: number = 100) => {
     const proj = proyectos.find(p => p.id === projId);
@@ -1114,11 +1148,23 @@ function VentasContent() {
                 {invoicingMode === 'avance' && (
                   <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
                     <SearchableSelect 
+                      label="Seleccionar Cliente" 
+                      options={wizardClientes} 
+                      value={wizardClientId} 
+                      onChange={(val) => {
+                        setWizardClientId(val);
+                        setSelectedProjId("");
+                      }} 
+                      placeholder="Buscar cliente..." 
+                    />
+
+                    <SearchableSelect 
                       label="Seleccionar Proyecto" 
-                      options={proyectos} 
+                      options={wizardProyectos} 
                       value={selectedProjId} 
                       onChange={setSelectedProjId} 
-                      placeholder="Buscar presupuesto..." 
+                      placeholder={wizardClientId ? "Buscar presupuesto..." : "Selecciona un cliente primero"} 
+                      disabled={!wizardClientId}
                     />
                     
                     <div className="space-y-2">
