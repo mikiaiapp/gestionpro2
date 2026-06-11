@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Realizar consulta a la base de datos
         run: |
-          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/perfiles?select=id&limit=1" \
+          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/perfiles?select=id&limit=1&t=$(date +%s)" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Cache-Control: no-cache"
