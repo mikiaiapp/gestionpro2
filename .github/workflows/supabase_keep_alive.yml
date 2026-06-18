@@ -2,7 +2,7 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    - cron: '0 0 */3 * *' # Ejecutar cada 3 días a las 00:00 UTC
+    - cron: '0 5 * * *' # Ejecutar todos los días a las 05:00 UTC
   workflow_dispatch: # Permitir ejecución manual desde la pestaña Actions
 
 jobs:
