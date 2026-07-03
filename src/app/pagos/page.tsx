@@ -6,6 +6,7 @@ import { HandCoins, Plus, Search, MoreHorizontal, Loader2, Receipt, Save, Trash2
 import { supabase } from "@/lib/supabase";
 import { DataTableHeader } from "@/components/DataTableHeader";
 import { Pagination } from "@/components/Pagination";
+import EconomicInput from "@/components/EconomicInput";
 
 export default function PagosPage() {
   const [pagos, setPagos] = useState<any[]>([]);
@@ -204,7 +205,7 @@ export default function PagosPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[var(--muted)] uppercase mb-1">Importe Pagado (€) *</label>
-                    <input type="number" step="0.01" value={importe} onChange={(e) => setImporte(e.target.value)} className="w-full p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" required />
+                    <EconomicInput value={parseFloat(importe) || 0} onChange={(val) => setImporte(val === 0 ? '' : val.toString())} className="w-full p-2.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:border-orange-500 font-bold text-right" placeholder="0,00" required />
                   </div>
                 </div>
 

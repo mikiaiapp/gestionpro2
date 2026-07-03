@@ -12,6 +12,7 @@ import { uploadInvoiceFile, deleteInvoiceFile } from "@/lib/storageService";
 import { exportVATBookPDF, exportVATBookExcel } from "@/lib/reportingService";
 import { getFullLocationByCP } from '@/lib/geoData';
 import { Pagination } from "@/components/Pagination";
+import EconomicInput from "@/components/EconomicInput";
 
 interface LineaCoste {
   unidades: number;
@@ -955,12 +956,11 @@ export default function CostesPage() {
                                 />
                               </td>
                               <td className="py-3 pr-4">
-                                <input 
-                                  type="number" 
-                                  step="any" 
-                                  value={linea.precio_unitario} 
-                                  onChange={(e) => updateLinea(idx, "precio_unitario", parseFloat(e.target.value))} 
-                                  className="w-full p-2 rounded-lg border border-gray-100 font-bold text-right" 
+                                <EconomicInput 
+                                  value={linea.precio_unitario || 0} 
+                                  onChange={(val) => updateLinea(idx, "precio_unitario", val)} 
+                                  className="w-full p-2 rounded-lg border border-gray-100 font-bold text-right focus:ring-2 focus:ring-purple-100 outline-none" 
+                                  placeholder="0,00"
                                 />
                               </td>
                               <td className="py-3 pr-4"><input type="number" value={linea.iva_pct} onChange={(e) => updateLinea(idx, "iva_pct", parseFloat(e.target.value))} className="w-full p-2 rounded-lg border border-gray-100 font-bold text-center" /></td>
@@ -1197,7 +1197,7 @@ export default function CostesPage() {
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Importe (€)</label>
-                      <input type="number" step="0.01" value={pagoImporte} onChange={e => setPagoImporte(e.target.value)} className="w-full p-4 rounded-xl border bg-gray-50 focus:bg-white font-mono font-bold text-[var(--accent)] outline-none transition-all" />
+                      <EconomicInput value={parseFloat(pagoImporte) || 0} onChange={val => setPagoImporte(val === 0 ? '' : val.toString())} className="w-full p-4 rounded-xl border bg-gray-50 focus:bg-white font-mono font-bold text-[var(--accent)] outline-none transition-all" placeholder="0,00" />
                     </div>
                   </div>
                   <div>

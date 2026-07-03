@@ -16,6 +16,7 @@ import { UploadCloud, ShieldCheck, AlertTriangle } from "lucide-react";
 import { exportVATBookPDF, exportVATBookExcel } from "@/lib/reportingService";
 import { uploadInvoiceFile, deleteInvoiceFile } from "@/lib/storageService";
 import { Pagination } from "@/components/Pagination";
+import EconomicInput from "@/components/EconomicInput";
 
 interface LineaFactura {
   unidades: number;
@@ -228,9 +229,9 @@ function VentasContent() {
 
     // Extraer todos los números existentes con este prefijo
     const numbers = allVentas
-      .filter(v => v.num_factura && v.num_factura.startsWith(finalPrefix))
+      .filter(v => v.num_factura && String(v.num_factura).startsWith(finalPrefix))
       .map(v => {
-        const after = v.num_factura.slice(finalPrefix.length);
+        const after = String(v.num_factura).slice(finalPrefix.length);
         return parseInt(after, 10);
       })
       .filter(n => !isNaN(n) && n > 0);
@@ -413,8 +414,12 @@ function VentasContent() {
         if (vError) throw vError;
         currentVentaId = venta.id;
         
-        // Actualizar el contador oficial en el perfil tras el éxito del registro
-        const nextCount = (perfil?.contador_ventas || 1) + 1;
+        // Actualizar el contador oficial en el perfil de forma inteligente tras el éxito del registro
+        // Buscamos la última secuencia de dígitos dentro de numFactura para actualizar el contador
+        const match = numFactura.match(/(\d+)(?!.*\d)/);
+        const parsedSavedNum = match ? parseInt(match[0], 10) : NaN;
+        const nextCount = !isNaN(parsedSavedNum) ? parsedSavedNum + 1 : (perfil?.contador_ventas || 1) + 1;
+
         await supabase.from("perfil_negocio").update({ contador_ventas: nextCount }).eq("user_id", user.id);
         fetchData(); // Recargar datos localmente
       }
@@ -1058,7 +1063,7 @@ function VentasContent() {
                           <textarea rows={1} value={linea.descripcion} onChange={(e) => updateLinea(idx, { descripcion: e.target.value })} placeholder="Descripción del concepto..." className="w-full px-4 py-3 rounded-xl border bg-gray-50 text-sm min-h-[44px] resize-none" />
                         </div>
                         <div className="w-32">
-                          <input type="number" value={linea.precio_unitario} onChange={(e) => updateLinea(idx, { precio_unitario: parseFloat(e.target.value) })} placeholder="Precio" className="w-full px-4 py-3 rounded-xl border bg-gray-50 text-right font-bold" />
+                          <EconomicInput value={linea.precio_unitario || 0} onChange={(val) => updateLinea(idx, { precio_unitario: val })} placeholder="0,00" className="w-full px-4 py-3 rounded-xl border bg-gray-50 text-right font-bold focus:ring-4 focus:ring-blue-500/5 outline-none" />
                         </div>
                         <div className="w-32 bg-gray-50 px-4 py-3 rounded-xl border text-right font-mono font-bold text-gray-400 text-sm">
                           {formatCurrency(linea.unidades * linea.precio_unitario)}
@@ -1219,7 +1224,7 @@ function VentasContent() {
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Importe a Cobrar</label>
                     <div className="relative">
-                      <input type="number" step="0.01" value={cobroImporte} onChange={e => setCobroImporte(e.target.value)} className="w-full p-4 rounded-xl border bg-gray-50 font-black text-xl text-gray-800 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all pr-12" />
+                      <EconomicInput value={parseFloat(cobroImporte) || 0} onChange={val => setCobroImporte(val === 0 ? '' : val.toString())} className="w-full p-4 rounded-xl border bg-gray-50 font-black text-xl text-gray-800 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all pr-12" placeholder="0,00" />
                       <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-gray-300 text-xl">€</span>
                     </div>
                   </div>

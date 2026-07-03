@@ -14,6 +14,7 @@ import { formatCurrency, cleanBudgetNumber } from "@/lib/format";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { uploadInvoiceFile, deleteInvoiceFile } from "@/lib/storageService";
 import { Pagination } from "@/components/Pagination";
+import EconomicInput from "@/components/EconomicInput";
 
 interface LineaProyecto {
   unidades: number;
@@ -762,39 +763,21 @@ export default function ProyectosPage() {
                       />
                     </td>
                    <td className="py-2 pr-4">
-                     <input
-                       type="text"
-                       inputMode="decimal"
-                       value={linea.coste === 0 ? '' : (linea.coste || '')}
-                       onChange={(e) => {
-                          const raw = e.target.value.replace(',', '.');
-                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                            const val = raw === '' ? 0 : parseFloat(raw);
-                            updateLinea(idx, { coste: isNaN(val) ? 0 : val });
-                          }
-                       }}
-                       onFocus={(e) => e.target.select()}
-                       className="w-full p-2 rounded-lg border border-gray-100 text-right font-mono text-red-600 focus:ring-2 focus:ring-red-100 outline-none"
-                       placeholder="0.00"
-                     />
-                   </td>
-                   <td className="py-2 pr-4">
-                     <input
-                       type="text"
-                       inputMode="decimal"
-                       value={linea.precio_unitario === 0 ? '' : (linea.precio_unitario || '')}
-                       onChange={(e) => {
-                          const raw = e.target.value.replace(',', '.');
-                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                            const val = raw === '' ? 0 : parseFloat(raw);
-                            updateLinea(idx, { precio_unitario: isNaN(val) ? 0 : val });
-                          }
-                       }}
-                       onFocus={(e) => e.target.select()}
-                       className="w-full p-2 rounded-lg border border-gray-100 text-right font-mono text-green-600 font-bold focus:ring-2 focus:ring-green-100 outline-none"
-                       placeholder="0.00"
-                     />
-                   </td>
+                      <EconomicInput
+                        value={linea.coste || 0}
+                        onChange={(val) => updateLinea(idx, { coste: val })}
+                        className="w-full p-2 rounded-lg border border-gray-100 text-right font-mono text-red-600 focus:ring-2 focus:ring-red-100 outline-none"
+                        placeholder="0,00"
+                      />
+                    </td>
+                    <td className="py-2 pr-4">
+                      <EconomicInput
+                        value={linea.precio_unitario || 0}
+                        onChange={(val) => updateLinea(idx, { precio_unitario: val })}
+                        className="w-full p-2 rounded-lg border border-gray-100 text-right font-mono text-green-600 font-bold focus:ring-2 focus:ring-green-100 outline-none"
+                        placeholder="0,00"
+                      />
+                    </td>
                    <td className="py-2 text-center">{lineas.length > 1 && <button onClick={() => removeLinea(idx)} className="text-red-300 hover:text-red-500"><Trash2 size={16}/></button>}</td>
                  </tr>
                ))}
