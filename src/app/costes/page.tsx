@@ -25,6 +25,7 @@ export default function CostesPage() {
   const [costes, setCostes] = useState<any[]>([]);
   const [proveedores, setProveedores] = useState<any[]>([]);
   const [proyectos, setProyectos] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -46,6 +47,7 @@ export default function CostesPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [proveedorId, setProveedorId] = useState("");
   const [tipoGasto, setTipoGasto] = useState("general");
+  const [clienteId, setClienteId] = useState("");
   const [proyectoId, setProyectoId] = useState("");
   const [retencionPct, setRetencionPct] = useState(0);
   const [estadoPago, setEstadoPago] = useState("Pendiente");
@@ -72,6 +74,21 @@ export default function CostesPage() {
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [perfil, setPerfil] = useState<any>(null);
   const [tiposIRPF, setTiposIRPF] = useState<any[]>([]);
+
+  const modalClientes = useMemo(() => {
+    return clientes.filter(c => 
+      proyectos.some(p => p.cliente_id === c.id)
+    );
+  }, [clientes, proyectos]);
+
+  const modalProyectos = useMemo(() => {
+    return proyectos
+      .filter(p => p.cliente_id === clienteId)
+      .map(p => ({
+        ...p,
+        nombre: p.originalNombre || p.nombre
+      }));
+  }, [proyectos, clienteId]);
 
   useEffect(() => {
     fetchData();
@@ -126,6 +143,7 @@ export default function CostesPage() {
     const { data: pgts } = await supabase.from("pagos").select("*").eq("user_id", user.id);
     const { data: provs } = await supabase.from("proveedores").select("id, nombre, nif").eq("user_id", user.id).order("nombre");
     const { data: projs } = await supabase.from("proyectos").select("id, nombre, estado, cliente_id, clientes(nombre)").eq("user_id", user.id).order("nombre");
+    const { data: clis } = await supabase.from("clientes").select("id, nombre").eq("user_id", user.id).order("nombre");
 
     const preparedCostes = (csts || []).map(c => {
       const misPagos = (pgts || []).filter((p: any) => p.coste_id === c.id);
@@ -144,6 +162,7 @@ export default function CostesPage() {
 
     setCostes(preparedCostes);
     setProveedores(provs || []);
+    setClientes(clis || []);
 
     // Fetch Tipos IRPF
     const { data: irpfData } = await supabase
@@ -157,6 +176,7 @@ export default function CostesPage() {
       const clienteObj = Array.isArray(p.clientes) ? p.clientes[0] : p.clientes;
       return {
         ...p,
+        originalNombre: p.nombre,
         nombre: `[${clienteObj?.nombre || 'S/C'}] ${p.nombre}`
       };
     });
@@ -186,6 +206,7 @@ export default function CostesPage() {
     setFecha(new Date().toISOString().split('T')[0]);
     setProveedorId("");
     setTipoGasto("general");
+    setClienteId("");
     setProyectoId("");
     setRetencionPct(0);
     setEstadoPago("Pendiente");
@@ -201,7 +222,11 @@ export default function CostesPage() {
     setFecha(c.fecha);
     setProveedorId(c.proveedor_id || "");
     setTipoGasto(c.tipo_gasto || "general");
+    
+    const proj = proyectos.find(p => p.id === c.proyecto_id);
+    setClienteId(proj ? proj.cliente_id : "");
     setProyectoId(c.proyecto_id || "");
+    
     setRetencionPct(c.retencion_pct || 0);
     setEstadoPago(c.estado_pago || "Pendiente");
     setPdfUrl(c.pdf_url || "");
@@ -885,7 +910,7 @@ export default function CostesPage() {
                       <div className="md:col-span-2">
                          <SearchableSelect label="Proveedor" options={proveedores} value={proveedorId} onChange={(id) => setProveedorId(id)} placeholder="Buscar proveedor..." />
                       </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo de Gasto</label>
                         <select value={tipoGasto} onChange={(e) => setTipoGasto(e.target.value)} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50">
                            <option value="general">Gasto General</option>
@@ -893,15 +918,30 @@ export default function CostesPage() {
                         </select>
                       </div>
                       {tipoGasto === "proyecto" && (
-                        <div className="md:col-span-1">
-                           <SearchableSelect 
-                             label="Vincular Proyecto" 
-                             options={proyectos} 
-                             value={proyectoId} 
-                             onChange={(id) => setProyectoId(id)} 
-                             placeholder="Seleccionar..." 
-                           />
-                        </div>
+                        <>
+                          <div className="md:col-span-2">
+                             <SearchableSelect 
+                               label="Seleccionar Cliente" 
+                               options={modalClientes} 
+                               value={clienteId} 
+                               onChange={(val) => {
+                                 setClienteId(val);
+                                 setProyectoId("");
+                               }} 
+                               placeholder="Buscar cliente..." 
+                             />
+                          </div>
+                          <div className="md:col-span-2">
+                             <SearchableSelect 
+                               label="Seleccionar Proyecto" 
+                               options={modalProyectos} 
+                               value={proyectoId} 
+                               onChange={(id) => setProyectoId(id)} 
+                               placeholder={clienteId ? "Seleccionar..." : "Selecciona un cliente primero"} 
+                               disabled={!clienteId}
+                             />
+                          </div>
+                        </>
                       )}
                     </div>
 
