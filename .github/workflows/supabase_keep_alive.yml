@@ -2,16 +2,26 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    - cron: '0 5 * * *' # Ejecutar todos los días a las 05:00 UTC
+    - cron: '23 5 * * *' # Ejecutar todos los días a las 05:23 UTC (evita minutos en punto para mayor disponibilidad)
   workflow_dispatch: # Permitir ejecución manual desde la pestaña Actions
 
 jobs:
   ping_supabase:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Realizar consulta a la base de datos
-        run: |
-          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/perfiles?select=id&created_at=lt.$(date -u +'%Y-%m-%dT%H:%M:%SZ')&limit=1" \
-          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Cache-Control: no-cache"
+        run: node scripts/keep-alive.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
