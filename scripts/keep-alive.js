@@ -43,6 +43,22 @@ const timestamp = new Date().toISOString();
 const testUrl = `${cleanUrl}/rest/v1/perfiles?select=id&created_at=lt.${timestamp}&limit=1`;
 
 console.log(`Ping a la base de datos de Supabase en: ${cleanUrl}`);
+try {
+  const urlObj = new URL(cleanUrl);
+  const hostname = urlObj.hostname;
+  const parts = hostname.split('.');
+  if (parts.length > 0) {
+    const projectSubdomain = parts[0];
+    if (projectSubdomain.length > 6) {
+      const maskedSubdomain = `${projectSubdomain.substring(0, 4)}...${projectSubdomain.substring(projectSubdomain.length - 4)}`;
+      console.log(`[Depuración] ID del proyecto destino detectado: ${maskedSubdomain}`);
+    } else {
+      console.log(`[Depuración] Host de destino detectado: ${hostname}`);
+    }
+  }
+} catch (e) {
+  console.log("No se pudo parsear la URL para el log seguro:", e.message);
+}
 console.log(`Consulta: rest/v1/perfiles?select=id&created_at=lt.${timestamp}&limit=1`);
 
 const options = {
