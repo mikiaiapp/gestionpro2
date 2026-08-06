@@ -81,7 +81,7 @@ function runPing() {
     resWrite.on('end', () => {
       if (resWrite.statusCode >= 200 && resWrite.statusCode < 300) {
         console.log("\x1b[32m¡Éxito! Ping de ESCRITURA registrado correctamente en 'keep_alive_pings'.\x1b[0m");
-        process.exit(0);
+        runReadPing();
       } else {
         console.log(`El ping de escritura devolvió código ${resWrite.statusCode}. Procediendo con consulta de lectura de fallback...`);
         runFallbackRead();
@@ -96,6 +96,44 @@ function runPing() {
 
   reqWrite.write(JSON.stringify({}));
   reqWrite.end();
+}
+
+function runReadPing() {
+  const getUrl = `${cleanUrl}/rest/v1/keep_alive_pings?select=*&limit=1`;
+  console.log("Ejecutando consulta de LECTURA de validación en 'keep_alive_pings'...");
+
+  const getOptions = {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${supabaseAnonKey}`,
+      'Cache-Control': 'no-cache'
+    }
+  };
+
+  const reqRead = https.get(getUrl, getOptions, (resRead) => {
+    let bodyRead = '';
+    resRead.on('data', (chunk) => { bodyRead += chunk; });
+    resRead.on('end', () => {
+      if (resRead.statusCode >= 200 && resRead.statusCode < 300) {
+        console.log("\x1b[32m¡Éxito! Consulta de LECTURA en 'keep_alive_pings' ejecutada correctamente.\x1b[0m");
+        try {
+          const parsed = JSON.parse(bodyRead);
+          console.log(`Registros leídos: ${parsed.length}`);
+        } catch (e) {
+          console.log("Cuerpo de la respuesta:", bodyRead);
+        }
+        process.exit(0);
+      } else {
+        console.log(`La lectura de validación en 'keep_alive_pings' devolvió código ${resRead.statusCode}. Procediendo con fallback...`);
+        runFallbackRead();
+      }
+    });
+  });
+
+  reqRead.on('error', (err) => {
+    console.log("Error en la lectura de validación:", err.message, ". Procediendo con fallback...");
+    runFallbackRead();
+  });
 }
 
 function runFallbackRead() {
