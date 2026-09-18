@@ -9,6 +9,8 @@ export function SWRegistration() {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
             console.log('SW registered: ', registration);
+            // Forzar actualización para reemplazar versiones anteriores con caché obsoleto
+            registration.update();
           },
           (err) => {
             console.log('SW registration failed: ', err);
@@ -20,3 +22,4 @@ export function SWRegistration() {
 
   return null;
 }
+
