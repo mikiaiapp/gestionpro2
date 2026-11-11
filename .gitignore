@@ -21,3 +21,5 @@ Thumbs.db
 
 # Pruebas y volcados locales (no se suben)
 scratch/
+tsconfig.tsbuildinfo
+src/app/test-pdf/
