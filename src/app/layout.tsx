@@ -28,12 +28,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 import { AuthGuard } from "@/components/AuthGuard";
 import { SWRegistration } from "@/components/SWRegistration";
+import Script from "next/script";
+import { PTR_CODE } from "@/lib/pullToRefreshCode";
 
 export default function RootLayout({
   children,
@@ -49,6 +49,7 @@ export default function RootLayout({
             {children}
           </main>
         </AuthGuard>
+        <Script id="pull-to-refresh" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: PTR_CODE }} />
       </body>
     </html>
   );
