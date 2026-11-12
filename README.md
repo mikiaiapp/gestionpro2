@@ -10,6 +10,7 @@ GestiónPro es una plataforma SaaS de gestión empresarial moderna y profesional
 - 🧹 **Gestor Documental Limpio**: Nuevo motor de integridad que solo muestra PDFs vinculados a registros reales. Incluye herramienta de **Limpieza de Huérfanos** para purgar el Storage de archivos sin referencia.
 - 💶 **Formato Moneda España**: Visualización y exportación profesional con separador de miles (.) y decimales (,) (Ej: `1.500,25 €`).
 - 📦 **Portabilidad Universal**: Exportación total de datos y archivos en un único ZIP para migraciones instantáneas.
+- 📱 **Móvil**: zoom con la pinza siempre permitido y deslizar hacia abajo desde arriba para actualizar.
 
 ## 🚀 Guía de Despliegue Rápido
 
