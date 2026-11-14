@@ -46,3 +46,11 @@ GestiónPro es una plataforma SaaS de gestión empresarial moderna y profesional
 
 ---
 *GestiónPro: Control total, integridad absoluta. Diseñador por mikiaiapp.*
+
+---
+
+## 👤 Sobre el autor
+
+Soy **Miguel Ángel Fernández**, Director Financiero (CFO) con más de 20 años en la alta dirección de empresas industriales. Combino la visión estratégica de las finanzas —tesorería, financiación, presupuestos y reporting— con el desarrollo de software y la inteligencia artificial aplicada a la gestión. Estas aplicaciones nacen para resolver necesidades reales de mi día a día y las comparto como código abierto.
+
+🌐 **Web:** [mafede.i234.me](https://mafede.i234.me/) · 💼 **LinkedIn:** [linkedin.com/in/miguelangelfernandezdelgado](https://www.linkedin.com/in/miguelangelfernandezdelgado/)
