@@ -2,6 +2,14 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmikiaiapp%2Fgestionpro2)
 
+<p align="center">
+  <picture>
+    <source media="(min-width: 900px)" srcset="docs/demo/gestionpro_pc.gif" />
+    <img src="docs/demo/gestionpro_m.gif" width="300" alt="Demostración animada de GestiónPro con datos ficticios" />
+  </picture>
+  <br /><sub>Demostración con datos ficticios.</sub>
+</p>
+
 GestiónPro es una plataforma SaaS de gestión empresarial moderna y profesional, diseñada para cumplir con los estándares de facturación más exigentes. Esta versión (v1.6) introduce mejoras críticas en integridad de datos, automatización de contadores y refinamiento visual.
 
 ## ✨ Características Destacadas
